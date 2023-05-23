@@ -23,13 +23,15 @@ ball_t ball_new() {
   return ball;
 }
 
-ball_t ball_tick(ball_t ball) {
+ball_t ball_tick(ball_t ball, uint8_t *bounce_count) {
   if (ball.x > GRAPHICS_WIDTH - kBallWidth - ball.vx) {
     ball.x = GRAPHICS_WIDTH - kBallWidth;
     ball.vx *= -1;
+    (*bounce_count)++;
   } else if (ball.x < -1 * ball.vx) {
     ball.x = 0;
     ball.vx *= -1;
+    (*bounce_count)++;
   } else {
     ball.x += ball.vx;
   }
@@ -37,9 +39,11 @@ ball_t ball_tick(ball_t ball) {
   if (ball.y > GRAPHICS_HEIGHT - kBallHeight - ball.vy) {
     ball.y = GRAPHICS_HEIGHT - kBallHeight;
     ball.vy *= -1;
+    (*bounce_count)++;
   } else if (ball.y < -1 * ball.vy) {
     ball.y = 0;
     ball.vy *= -1;
+    (*bounce_count)++;
   } else {
     ball.y += ball.vy;
   }
@@ -52,30 +56,22 @@ void ball_draw(ball_t ball) {
 }
 
 void main() {
-  const char kMessage[] = "poopy & boba & ";
-  const uint8_t kMessageLen = sizeof(kMessage) - 1;
-  uint8_t i = 0;
-
   ball_t ball;
   ball = ball_new();
 
+  uint8_t bounce_count = 0;
+
   while (1) {
-    // Slow down without a hot loop by waiting for two vertical blank
-    // interrupts.
-    for (uint8_t i = 0; i < 4; i++)
-      wait_vbl_done();
+    // Slow down without a hot loop by waiting for a vertical blank interrupt.
+    wait_vbl_done();
 
-    ball = ball_tick(ball);
+    ball = ball_tick(ball, &bounce_count);
 
-    color(DKGREY, LTGREY, SOLID);
+    color(DKGREY, LTGREY, XOR);
     ball_draw(ball);
 
-    color(BLACK, WHITE, SOLID);
-    if (i < kMessageLen) {
-      gprintf("%c", kMessage[i]);
-      i++;
-    } else {
-      i = 0;
-    }
+    color(BLACK, WHITE, XOR);
+    gotogxy(1, 1);
+    gprintf("BOUNCE COUNT: %u", (int)bounce_count);
   }
 }
