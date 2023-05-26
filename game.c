@@ -1,77 +1,169 @@
-#include <gb/drawing.h>
 #include <gb/gb.h>
 #include <gbdk/platform.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
-const uint8_t kBallWidth = 16;
-const uint8_t kBallHeight = 16;
+const uint8_t kBallWidth = 8;
+const uint8_t kBallHeight = 8;
+const uint8_t kUpDeltaV = 3;
+const uint8_t kMaxSpeed = 10;
+
+typedef struct coord {
+  uint8_t pos;
+  uint8_t speed;
+  bool negative;
+} coord_t;
+
+coord_t coord_new() {
+  coord_t coord;
+  coord.pos = 0;
+  coord.speed = 0;
+  coord.negative = false;
+  return coord;
+}
+
+coord_t coord_tick(coord_t coord) {
+  if (coord.negative) {
+    coord.pos -= coord.speed;
+  } else {
+    coord.pos += coord.speed;
+  }
+  return coord;
+}
+
+bool coord_would_tick_oob(coord_t coord, uint8_t lo, uint8_t hi) {
+  int16_t pos = coord.pos;
+  if (coord.negative) {
+    pos -= coord.speed;
+  } else {
+    pos += coord.speed;
+  }
+  return !((int16_t)lo <= pos && pos <= (int16_t)hi);
+}
 
 typedef struct ball {
-  uint8_t x;
-  uint8_t y;
-  int8_t vx;
-  int8_t vy;
+  coord_t x;
+  coord_t y;
 } ball_t;
 
 ball_t ball_new() {
   ball_t ball;
-  ball.x = GRAPHICS_WIDTH / 2;
-  ball.y = GRAPHICS_HEIGHT / 2;
-  ball.vx = 3;
-  ball.vy = 1;
+  ball.x = coord_new();
+  ball.y = coord_new();
   return ball;
 }
 
-ball_t ball_tick(ball_t ball, uint8_t *bounce_count) {
-  if (ball.x > GRAPHICS_WIDTH - kBallWidth - ball.vx) {
-    ball.x = GRAPHICS_WIDTH - kBallWidth;
-    ball.vx *= -1;
-    (*bounce_count)++;
-  } else if (ball.x < -1 * ball.vx) {
-    ball.x = 0;
-    ball.vx *= -1;
-    (*bounce_count)++;
-  } else {
-    ball.x += ball.vx;
+ball_t ball_tick(ball_t ball) {
+  // Add gravity. This computation is complicated by the fact that I am using
+  // uint8_t speeds with separate sign bits.
+  if (ball.y.speed == 0) {
+    // If we're at the top of an arc with zero speed, start falling.
+    ball.y.negative = false;
+    ball.y.speed = 1;
+  } else if (!ball.y.negative) {
+    // Increase speed if we're already falling and we haven't reached terminal
+    // velocity.
+    if (ball.y.speed < kMaxSpeed) {
+      ball.y.speed++;
+    }
+  } else if (ball.y.speed > 0) {
+    // If we're moving upward with positive speed, reduce speed.
+    ball.y.speed--;
   }
 
-  if (ball.y > GRAPHICS_HEIGHT - kBallHeight - ball.vy) {
-    ball.y = GRAPHICS_HEIGHT - kBallHeight;
-    ball.vy *= -1;
-    (*bounce_count)++;
-  } else if (ball.y < -1 * ball.vy) {
-    ball.y = 0;
-    ball.vy *= -1;
-    (*bounce_count)++;
-  } else {
-    ball.y += ball.vy;
+  // If ticking any coordinate forward in time would go out of bounds, negate
+  // that coordinate's velocity.
+  if (coord_would_tick_oob(ball.x, 0, SCREENWIDTH)) {
+    ball.x.negative = !ball.x.negative;
   }
+  if (coord_would_tick_oob(ball.y, 0, SCREENHEIGHT)) {
+    ball.y.negative = !ball.y.negative;
+  }
+
+  ball.x = coord_tick(ball.x);
+  ball.y = coord_tick(ball.y);
 
   return ball;
 }
 
-void ball_draw(ball_t ball) {
-  box(ball.x, ball.y, ball.x + kBallWidth, ball.y + kBallHeight, M_NOFILL);
-}
+void ball_draw(ball_t ball) { move_sprite(0, ball.x.pos, ball.y.pos); }
 
-void main() {
+// The tile is 8x8 pixels with two bits per pixel.
+const uint8_t kSpriteTile[16] = {
+    0b11111111, 0b11111111, //
+    0b11111111, 0b11111111, //
+    0b11111111, 0b11111111, //
+    0b11111111, 0b11111111, //
+    0b11111111, 0b11111111, //
+    0b11111111, 0b11111111, //
+    0b11111111, 0b11111111, //
+    0b11111111, 0b11111111, //
+};
+
+int main() {
+  disable_interrupts();
+  DISPLAY_OFF;
+  LCDC_REG = LCDCF_OFF | LCDCF_WIN9C00 | LCDCF_WINON | LCDCF_BG8800 |
+             LCDCF_BG9800 | LCDCF_OBJ16 | LCDCF_OBJON | LCDCF_BGON;
+  BGP_REG = OBP0_REG = OBP1_REG = 0xE4U;
+
+  set_sprite_data(0, 1, kSpriteTile);
+  set_sprite_prop(0, 0x00);
+  set_sprite_tile(0, 0x00);
+
   ball_t ball;
   ball = ball_new();
+  ball.x.speed = 1;
 
-  uint8_t bounce_count = 0;
+  DISPLAY_ON;
+  enable_interrupts();
 
-  while (1) {
+  for (uint8_t counter = 0; true; counter++) {
     // Slow down without a hot loop by waiting for a vertical blank interrupt.
     wait_vbl_done();
 
-    ball = ball_tick(ball, &bounce_count);
+    uint8_t buttons = joypad();
 
-    color(DKGREY, LTGREY, XOR);
+    // Pause the game as long as the select button is pressed down.
+    if (buttons & J_SELECT) {
+      waitpadup();
+    }
+
+    if (counter % 4 == 0) {
+      if (buttons & J_UP) {
+        if (ball.y.negative && ball.y.speed < kMaxSpeed) {
+          ball.y.speed += kUpDeltaV;
+        } else if (!ball.y.negative && ball.y.speed > 1) {
+          ball.y.speed -= kUpDeltaV;
+        } else if (ball.y.speed == 0) {
+          ball.y.negative = true;
+          ball.y.speed = 1;
+        }
+      }
+      if (buttons & J_RIGHT) {
+        if (!ball.x.negative && ball.x.speed < kMaxSpeed) {
+          ball.x.speed++;
+        } else if (ball.x.negative && ball.x.speed > 0) {
+          ball.x.speed--;
+        } else if (ball.x.speed == 0) {
+          ball.x.negative = false;
+          ball.x.speed = 1;
+        }
+      }
+      if (buttons & J_LEFT) {
+        if (ball.x.negative && ball.x.speed < kMaxSpeed) {
+          ball.x.speed++;
+        } else if (!ball.x.negative && ball.x.speed > 0) {
+          ball.x.speed--;
+        } else if (ball.x.speed == 0) {
+          ball.x.negative = true;
+          ball.x.speed = 1;
+        }
+      }
+    }
+
+    ball = ball_tick(ball);
     ball_draw(ball);
-
-    color(BLACK, WHITE, XOR);
-    gotogxy(1, 1);
-    gprintf("BOUNCE COUNT: %u", (int)bounce_count);
   }
 }
