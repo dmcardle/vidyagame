@@ -9,7 +9,7 @@ all: $(ROM)
 
 .PHONY: run
 run: $(ROM)
-	gngb -o $(ROM)
+	sdlgnuboy --fullscreen=0 --scale=3 $<
 
 .PHONY: format
 format:
