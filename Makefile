@@ -1,8 +1,7 @@
 CC := gbdk/bin/lcc -Wa-l -Wl-m -Wl-j
-ROM := game.gb
 
 .PHONY: all
-all: $(ROM)
+all: game.gb game.gen.asm game.clang.o
 
 # TODO: Compile with a specific C version (C11?). When I add `std-c89`, per GBDK
 # documentation, the compiler hangs.
@@ -10,11 +9,21 @@ all: $(ROM)
 %.gb: %.c
 	$(CC) -o $@ $<
 
+# For debugging, it may be useful to review the compiler's assembly output.
+%.gen.asm: %.c
+	$(CC) -c -S -o $@ $<
+
+# Compile game sources for the host. Clang has better warnings than GBDK.
 %.clang.o: %.c
-	clang -Werror=all -Igbdk/include -o $@ $^
+	clang -c -std=c99 \
+	  -fno-builtin \
+	  -Igbdk/include \
+	  -D__PORT_z80 -D__TARGET_gb \
+	  -Werror=all -Wno-implicit-int -Wno-unused-value \
+	  -o $@ $^
 
 .PHONY: run
-run: $(ROM)
+run: game.gb
 	sdlgnuboy --fullscreen=0 --scale=3 $<
 
 .PHONY: format
@@ -26,3 +35,5 @@ clean:
 	-rm *.gb
 	-rm *.map
 	-rm *.noi
+	-rm *.clang.o
+	-rm *.gen.asm
