@@ -132,9 +132,9 @@ int main() {
 
     if (counter % 4 == 0) {
       if (buttons & J_UP) {
-        if (ball.y.negative && ball.y.speed < kMaxSpeed) {
+        if (ball.y.negative && ball.y.speed <= kMaxSpeed - kUpDeltaV) {
           ball.y.speed += kUpDeltaV;
-        } else if (!ball.y.negative && ball.y.speed > 1) {
+        } else if (!ball.y.negative && ball.y.speed >= kUpDeltaV) {
           ball.y.speed -= kUpDeltaV;
         } else if (ball.y.speed == 0) {
           ball.y.negative = true;
