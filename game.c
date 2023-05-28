@@ -2,7 +2,6 @@
 #include <gbdk/platform.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 const uint8_t kBallWidth = 8;
 const uint8_t kBallHeight = 8;
