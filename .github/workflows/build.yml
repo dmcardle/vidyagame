@@ -1,0 +1,20 @@
+---
+on: push
+
+name: Build
+jobs:
+  build:
+    name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v3
+      - name: Set up environment
+        run: ./setup.sh
+      - name: Make
+        run: make
+      - name: Upload ROM
+        uses: actions/upload-artifact@v3
+        with:
+          name: vidyagame_rom
+          path: game.gb
