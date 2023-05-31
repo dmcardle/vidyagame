@@ -1,0 +1,8 @@
+gbdk-linux64.tar.gz
+gbdk/**
+
+*.gb
+*.gen.asm
+*.map
+*.noi
+*.o
