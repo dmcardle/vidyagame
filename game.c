@@ -88,16 +88,26 @@ ball_t ball_tick(ball_t ball) {
 
 void ball_draw(ball_t ball) { move_sprite(0, ball.x.pos, ball.y.pos); }
 
-// The tile is 8x8 pixels with two bits per pixel.
+// The tile is 8x8 pixels with two bits per pixel. Surprisingly, the two bits
+// that make up a pixel are not sequential within a byte; instead, the pixel's
+// value is composed of the ith bit from bytes n and n+1 (for even values of n).
 const uint8_t kSpriteTile[16] = {
-    0b11111111, 0b11111111, //
-    0b11111111, 0b11111111, //
-    0b11111111, 0b11111111, //
-    0b11111111, 0b11111111, //
-    0b11111111, 0b11111111, //
-    0b11111111, 0b11111111, //
-    0b11111111, 0b11111111, //
-    0b11111111, 0b11111111, //
+    0b11111111, //
+    0b11111111, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b10000001, //
+    0b11111111, //
+    0b11111111, //
 };
 
 int main() {
