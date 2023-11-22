@@ -134,36 +134,34 @@ int main() {
       waitpadup();
     }
 
-    if (counter % 4 == 0) {
-      if (buttons & J_UP) {
-        if (ball.y.negative && ball.y.speed <= kMaxSpeed - kUpDeltaV) {
-          ball.y.speed += kUpDeltaV;
-        } else if (!ball.y.negative && ball.y.speed >= kUpDeltaV) {
-          ball.y.speed -= kUpDeltaV;
-        } else if (ball.y.speed == 0) {
-          ball.y.negative = true;
-          ball.y.speed = 1;
-        }
+    if (buttons & J_UP) {
+      if (ball.y.negative && ball.y.speed <= kMaxSpeed - kUpDeltaV) {
+        ball.y.speed += kUpDeltaV;
+      } else if (!ball.y.negative && ball.y.speed >= kUpDeltaV) {
+        ball.y.speed -= kUpDeltaV;
+      } else if (ball.y.speed == 0) {
+        ball.y.negative = true;
+        ball.y.speed = 1;
       }
-      if (buttons & J_RIGHT) {
-        if (!ball.x.negative && ball.x.speed < kMaxSpeed) {
-          ball.x.speed++;
-        } else if (ball.x.negative && ball.x.speed > 0) {
-          ball.x.speed--;
-        } else if (ball.x.speed == 0) {
-          ball.x.negative = false;
-          ball.x.speed = 1;
-        }
+    }
+    if (buttons & J_RIGHT) {
+      if (!ball.x.negative && ball.x.speed < kMaxSpeed) {
+        ball.x.speed++;
+      } else if (ball.x.negative && ball.x.speed > 0) {
+        ball.x.speed--;
+      } else if (ball.x.speed == 0) {
+        ball.x.negative = false;
+        ball.x.speed = 1;
       }
-      if (buttons & J_LEFT) {
-        if (ball.x.negative && ball.x.speed < kMaxSpeed) {
-          ball.x.speed++;
-        } else if (!ball.x.negative && ball.x.speed > 0) {
-          ball.x.speed--;
-        } else if (ball.x.speed == 0) {
-          ball.x.negative = true;
-          ball.x.speed = 1;
-        }
+    }
+    if (buttons & J_LEFT) {
+      if (ball.x.negative && ball.x.speed < kMaxSpeed) {
+        ball.x.speed++;
+      } else if (!ball.x.negative && ball.x.speed > 0) {
+        ball.x.speed--;
+      } else if (ball.x.speed == 0) {
+        ball.x.negative = true;
+        ball.x.speed = 1;
       }
     }
 
