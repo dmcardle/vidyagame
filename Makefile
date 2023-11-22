@@ -1,7 +1,9 @@
 CC := gbdk/bin/lcc -Wa-l -Wl-m -Wl-j
 
+HOST_OBJS = game.clang.o
+
 .PHONY: all
-all: game.gb game.gen.asm game.clang.o
+all: game.gb game.gen.asm $(HOST_OBJS)
 
 # TODO: Compile with a specific C version (C11?). When I add `std-c89`, per GBDK
 # documentation, the compiler hangs.
@@ -22,6 +24,11 @@ all: game.gb game.gen.asm game.clang.o
 	  -Werror=all -Wno-implicit-int -Wno-unused-value \
 	  -o $@ $^
 
+.PHONY: compile_commands.json
+compile_commands.json:
+	$(MAKE) clean
+	bear -- $(MAKE) $(HOST_OBJS)
+
 .PHONY: run
 run: game.gb
 	sdlgnuboy --fullscreen=0 --scale=3 $<
@@ -32,6 +39,7 @@ format:
 
 .PHONY: clean
 clean:
+  # Intentionally omitting compile_commands.json for convenience.
 	-rm *.gb
 	-rm *.map
 	-rm *.noi
