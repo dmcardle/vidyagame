@@ -14,13 +14,7 @@ typedef struct coord {
   bool negative;
 } coord_t;
 
-coord_t coord_new() {
-  coord_t coord;
-  coord.pos = 0;
-  coord.speed = 0;
-  coord.negative = false;
-  return coord;
-}
+const coord_t kDefaultCoord = {0, 0, false};
 
 coord_t coord_tick(coord_t coord) {
   if (coord.negative) {
@@ -43,8 +37,8 @@ typedef struct ball {
 
 ball_t ball_new() {
   ball_t ball;
-  ball.x = coord_new();
-  ball.y = coord_new();
+  ball.x = kDefaultCoord;
+  ball.y = kDefaultCoord;
   return ball;
 }
 
@@ -123,7 +117,7 @@ int main() {
   DISPLAY_ON;
   enable_interrupts();
 
-  for (uint8_t counter = 0; true; counter++) {
+  while (true) {
     // Slow down without a hot loop by waiting for a vertical blank interrupt.
     wait_vbl_done();
 
