@@ -32,13 +32,8 @@ coord_t coord_tick(coord_t coord) {
 }
 
 bool coord_would_tick_oob(coord_t coord, uint8_t lo, uint8_t hi) {
-  int16_t pos = coord.pos;
-  if (coord.negative) {
-    pos -= coord.speed;
-  } else {
-    pos += coord.speed;
-  }
-  return !((int16_t)lo <= pos && pos <= (int16_t)hi);
+  coord = coord_tick(coord);
+  return lo > coord.pos || coord.pos > hi;
 }
 
 typedef struct ball {
